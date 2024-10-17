@@ -68,6 +68,8 @@ def create_treemap(df: pd.DataFrame):
     )
     return fig
 
+file_path = 'https://github.com/CJ7MO/EDA_coffee/raw/refs/heads/main/exportaciones_coffee.xlsx'
+
 s1 = load_data(file_path, 0)
 s1 = preprocess_s1(s1)
 
