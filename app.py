@@ -23,11 +23,9 @@ html_title = """
 st.markdown(html_title, unsafe_allow_html=True)
 
 @st.cache_data
-def load_data(df: pd.DataFrame, sheet_name: int) -> pd.DataFrame:
-    df = pd.read_excel(df, sheet_name=sheet_name)
+def load_data(url: str, sheet_name: int) -> pd.DataFrame:
+    df = pd.read_excel(url, sheet_name=sheet_name)
     return df
-
-file_path = "exportaciones_coffee.xlsx"
 
 @st.cache_data
 def preprocess_s1(df: pd.DataFrame) -> pd.DataFrame:
@@ -50,7 +48,7 @@ def filter_by_year(df: pd.DataFrame, selected_years: list) -> pd.DataFrame:
         return df[df['año'].isin(selected_years)]
     return df
 
-@st.cache_resource(hash_funcs={px.treemap: px.treemap})
+@st.cache_resource()
 def create_treemap(df: pd.DataFrame):
     fig = px.treemap(
         df, 
