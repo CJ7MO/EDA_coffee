@@ -1,5 +1,15 @@
+from utils import (load_data, 
+                   preprocess_s10,
+                   years_list,
+                   filter_by_year,
+                   create_treemap,
+                   create_line_fig1,
+                   create_line_fig2,
+                   preprocess_s7,
+                   choropleth_map 
+                   )
+
 import streamlit as st
-import pandas as pd
 import warnings
 
 import plotly.express as px
@@ -22,82 +32,42 @@ html_title = """
 """
 st.markdown(html_title, unsafe_allow_html=True)
 
-@st.cache_data
-def load_data(url: str, sheet_name: int) -> pd.DataFrame:
-    df = pd.read_excel(url, sheet_name=sheet_name)
-    return df
 
-@st.cache_data
-def preprocess_s1(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.rename(columns={'MES': 'fecha', 'Total Exportaciones': 'total_export'})
-    df['total_kg'] = df['total_export'] * 60
-    df = df.loc[df['fecha']>'2016-12-31']
-    df['año'] = pd.to_datetime(df['fecha']).dt.year
-    df['mes'] = pd.to_datetime(df['fecha']).dt.strftime('%m')
-    return df
-
-@st.cache_data
-def preprocess_s10(df: pd.DataFrame) -> pd.DataFrame:
-    df['fecha'] = s10['Año'].astype(str) + '-' + s10['Mes'].astype(str) + '-01'
-    df = df.rename(columns={'Año':'año'})
-    return df
-
-@st.cache_data
-def filter_by_year(df: pd.DataFrame, selected_years: list) -> pd.DataFrame:
-    if selected_years:
-        return df[df['año'].isin(selected_years)]
-    return df
-
-@st.cache_resource()
-def create_treemap(df: pd.DataFrame):
-    fig = px.treemap(
-        df, 
-        path=['País destino', 'Nombre exportador'], 
-        values='Valor Factura (USD)*', 
-        color='Nombre exportador', 
-        color_discrete_sequence=px.colors.qualitative.Bold,
-        width=1750,
-        height=600
-    )
-    fig.update_traces(root_color="lightgrey")
-    fig.update_layout(
-        autosize=True,
-        title="Treemap de Exportaciones por País y Exportador",
-        title_x=0.4,
-        margin=dict(t=50, l=25, r=25, b=25)
-    )
-    return fig
 
 file_path = 'https://github.com/CJ7MO/EDA_coffee/raw/refs/heads/main/exportaciones_coffee.xlsx'
-
-s1 = load_data(file_path, 0)
-s1 = preprocess_s1(s1)
-
-years = s1['año'].unique().tolist()
-option = st.multiselect('Selecciona el año', years, placeholder="Selecciona un año")
-
-s1 = filter_by_year(s1, option)
-
-s10 = load_data(file_path, 9)
-s10 = preprocess_s10(s10)
-s10 = filter_by_year(s10, option)
-
-treemap_fig = create_treemap(s10)
-st.plotly_chart(treemap_fig)
+df = load_data(file_path, 9)
+df = preprocess_s10(df)
+years_list = years_list(df)
 
 col1, col2 = st.columns(2)
 with col1:
-    fig1 = px.line(s1, x="fecha", y="total_kg")
-    fig1.update_layout(xaxis_title="Fecha", yaxis_title="Total de Kgs", title="Exportaciones de CAFÉ en Colombia", width=800, height=400)
+    option = st.multiselect('Selecciona el año', years_list, placeholder="Selecciona un año")
+
+with col2:
+    features = ['Sacos de 70kg','Sacos de 60kg', 'Total en Kilogramos', 'Valor en USD']
+    feature = st.selectbox('Selecciona la variable', features)
+
+df = filter_by_year(df, option)
+fig = create_treemap(df, feature)
+st.plotly_chart(fig)
+
+col1, col2 = st.columns(2)
+with col1:
+    fig1 = create_line_fig1(df, feature)
     st.plotly_chart(fig1)
 
 with col2:
-    fig2 = px.line(s1, 
-                x='mes', 
-                y='total_kg', 
-                color='año',  # Diferente color por año
-                labels={'mes_dia': 'Mes', 'total_kg': 'Total KG'}, 
-                title='Total KG por Año',
-                width=800, height=400)
-
+    fig2 = create_line_fig2(df, feature)
     st.plotly_chart(fig2)
+
+s7 = load_data(file_path, 6)
+s7 = preprocess_s7(s7)
+s7 = filter_by_year(s7, option)
+
+col1, col2 = st.columns(2)
+with col1:
+    fig3 = choropleth_map(s7, feature)
+    st.plotly_chart(fig3)
+
+with col2:
+    pass
