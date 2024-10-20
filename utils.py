@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 import plotly.express as px
+import plotly.graph_objects as go
 
 pd.options.display.float_format = '{:,.2f}'.format
 
@@ -17,17 +18,6 @@ def preprocess_s10(df: pd.DataFrame) -> pd.DataFrame:
     df.rename(columns={'Sacos de 70 kg. equivalente real Exportados': 'Sacos de 70kg',
                    'Sacos de 60 Kg. Exportados': 'Sacos de 60kg','Valor Factura (USD)*': 'Valor en USD',
                    'Año': 'año', 'total_kg': 'Total en Kilogramos'}, inplace=True)
-    return df
-
-def years_list(df: pd.DataFrame) -> list:
-    years = df['año'].unique()
-    years.sort()
-    return years
-
-@st.cache_data
-def filter_by_year(df: pd.DataFrame, selected_years: list) -> pd.DataFrame:
-    if selected_years:
-        return df[df['año'].isin(selected_years)]
     return df
 
 @st.cache_data
@@ -169,6 +159,26 @@ def preprocess_s7(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
+@st.cache_data
+def preprocess_s6(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.loc[:, ['PAISES', 2017, 2018, 2019, 2020, 2021, 2022, 2023]]
+    df = df.rename(columns={'Año':'año'})
+    df_filtered = df[~df['PAISES'].str.contains('TOTAL')].reset_index(drop=True)
+    df_melted = df_filtered.melt(id_vars='PAISES', var_name='año', value_name='Valor')
+    return df_melted, df_filtered
+
+@st.cache_data
+def years_list(df: pd.DataFrame) -> list:
+    years = df['año'].unique()
+    years.sort()
+    return years
+
+@st.cache_data
+def filter_by_year(df: pd.DataFrame, selected_years: list) -> pd.DataFrame:
+    if selected_years:
+        return df[df['año'].isin(selected_years)]
+    return df
+
 @st.cache_resource()
 def create_treemap(df: pd.DataFrame, feature: str):
     df[feature] = pd.to_numeric(df[feature], errors='coerce')
@@ -210,17 +220,17 @@ def create_line_fig1(df: pd.DataFrame, feature:str):
 
 @st.cache_resource()
 def create_line_fig2(df: pd.DataFrame, feature:str):
-    # Asegurarse de que 'fecha' está en formato de fecha
+    
     df['fecha'] = pd.to_datetime(df['fecha'], errors='coerce')
 
-    # Extraer mes y año para facilitar la visualización por año y mes
+    
     df['mes'] = df['fecha'].dt.month
     df['año'] = df['fecha'].dt.year
 
-    # Agrupar por mes y año, y sumar el total de kilogramos
+    
     df_grouped = df.groupby(['año', 'mes'])[feature].sum().reset_index()
 
-    # Crear el gráfico de líneas, coloreando por año
+
     fig2 = px.line(df_grouped,
                    x='mes',
                    y=feature,
@@ -231,7 +241,7 @@ def create_line_fig2(df: pd.DataFrame, feature:str):
                    markers=True,
                    symbol="año")
 
-    # Ajustar el diseño del gráfico
+    
     fig2.update_layout(
         xaxis_title="Mes",
         yaxis_title="Total de KG",
@@ -249,16 +259,68 @@ def choropleth_map(df: pd.DataFrame, feature:str):
     df[feature] = df[feature].apply(lambda x: np.log10(x + 1) if x > 0 else 0)
     
     fig = px.choropleth(df,
-                        locations='País de destino',  # Columna con los nombres de los países (después del replace)
-                        locationmode='country names',  # Modo de ubicación, basado en los nombres de países
-                        color=feature,  # Métrica a visualizar
-                        hover_name='País de destino',  # Información a mostrar al pasar el mouse
-                        color_continuous_scale=px.colors.sequential.YlOrRd,  # Cambiar la paleta de colores a 'Viridis'
+                        locations='País de destino',  
+                        locationmode='country names',  
+                        color=feature,  
+                        hover_name='País de destino',  
+                        color_continuous_scale=px.colors.sequential.YlOrRd,  
                         range_color=[df[feature].min(), df[feature].max()],  
                         title=f"Exportaciones de Café por País {feature}",
                         width=800,
                         height=600)
     
-    fig.update_layout(coloraxis_showscale=False)
     
+    return fig
+
+@st.cache_resource()
+def heatmap(df: pd.DataFrame):
+    fig = go.Figure(data=go.Heatmap(
+                   z=df.set_index('PAISES').values,
+                   x=df.columns[1:],  # Años
+                   y=df['PAISES'],     # Países
+                   colorscale='Viridis'))
+
+    # Actualizar el layout del gráfico para que sea más cuadrado
+    fig.update_layout(
+        title='Mapa de Calor de Valores por País y Año',
+        xaxis_title='Año',
+        yaxis_title='Países',
+        width=800,  # Ajusta el ancho
+        height=600,  # Ajusta la altura
+        margin=dict(l=50, r=50, t=50, b=50)  # Márgenes
+    )
+
+    fig.update_xaxes(
+        tickvals=df.columns[1:],  # Usa solo los años disponibles
+        ticktext=[str(int(year)) for year in df.columns[1:]],  # Asegúrate de mostrar solo años enteros
+        tickmode='array'  # Establece el modo de ticks a 'array'
+    )
+
+    return  fig
+@st.cache_resource()
+def area(df: pd.DataFrame):
+    fig = px.area(df, x='año', y='Valor', color='PAISES',
+              title='Evolución de Valores por País (Área Apilada)',
+              width=800, height=400,)
+    
+    fig.update_xaxes(
+        tickvals=df['año'].unique(),  # Usa solo los años disponibles
+        ticktext=[str(int(year)) for year in df['año'].unique()],  # Asegúrate de mostrar solo años enteros
+        tickmode='array'  # Establece el modo de ticks a 'array'
+    )
+    
+    return fig
+
+def line(df: pd.DataFrame):
+    fig = px.line(df, x='año', y='Valor', color='PAISES',
+              title='Exportaciones de Café por País de 2000 a 2023',
+              width=800,
+                   height=400,)
+    
+    fig.update_xaxes(
+        tickvals=df['año'].unique(),  # Usa solo los años disponibles
+        ticktext=[str(int(year)) for year in df['año'].unique()],  # Asegúrate de mostrar solo años enteros
+        tickmode='array'  # Establece el modo de ticks a 'array'
+    )
+
     return fig

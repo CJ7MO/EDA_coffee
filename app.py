@@ -1,12 +1,16 @@
 from utils import (load_data, 
                    preprocess_s10,
+                   preprocess_s6,
                    years_list,
                    filter_by_year,
                    create_treemap,
                    create_line_fig1,
                    create_line_fig2,
                    preprocess_s7,
-                   choropleth_map 
+                   choropleth_map,
+                   heatmap,
+                   area,
+                   line 
                    )
 
 import streamlit as st
@@ -44,7 +48,7 @@ with col1:
     option = st.multiselect('Selecciona el año', years_list, placeholder="Selecciona un año")
 
 with col2:
-    features = ['Sacos de 70kg','Sacos de 60kg', 'Total en Kilogramos', 'Valor en USD']
+    features = ['Sacos de 70kg', 'Sacos de 60kg', 'Total en Kilogramos', 'Valor en USD']
     feature = st.selectbox('Selecciona la variable', features)
 
 df = filter_by_year(df, option)
@@ -60,6 +64,25 @@ with col2:
     fig2 = create_line_fig2(df, feature)
     st.plotly_chart(fig2)
 
+s6 = load_data(file_path, 5)
+s6_melted, s6_filtered = preprocess_s6(s6)
+available_years = [col for col in option if col in s6.columns]
+if available_years:
+    selected_columns = ['PAISES'] + available_years
+    s6_filtered = s6_filtered.loc[:, selected_columns]
+else:
+    s6_filtered = s6_filtered
+
+s6_melted = filter_by_year(s6_melted, option)
+col1, col2 = st.columns(2)
+with col1:
+    fig5 = area(s6_melted)
+    st.plotly_chart(fig5)
+
+with col2:
+    fig6 = line(s6_melted)
+    st.plotly_chart(fig6)
+
 s7 = load_data(file_path, 6)
 s7 = preprocess_s7(s7)
 s7 = filter_by_year(s7, option)
@@ -70,4 +93,6 @@ with col1:
     st.plotly_chart(fig3)
 
 with col2:
-    pass
+    fig4 = heatmap(s6_filtered)
+    st.plotly_chart(fig4)
+
