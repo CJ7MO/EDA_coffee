@@ -27,7 +27,7 @@ def tree_line() -> None:
 
     col1, col2 = st.columns(2)
     with col1:
-        option = st.multiselect('Selecciona el año', years_list)
+        option = st.multiselect('Selecciona el año', years_list, placeholder="Selecciona un año")
 
     with col2:
         features = ['Sacos de 70kg', 'Sacos de 60kg', 'Total en Kilogramos', 'Valor en USD']
