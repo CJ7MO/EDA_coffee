@@ -19,6 +19,7 @@ warnings.filterwarnings('ignore')
 
 
 def tree_line() -> None:
+    
     file_path = 'https://github.com/CJ7MO/EDA_coffee/raw/refs/heads/main/exportaciones_coffee.xlsx'
     df = load_data(file_path, 9)
     df = preprocess_s10(df)
@@ -26,7 +27,7 @@ def tree_line() -> None:
 
     col1, col2 = st.columns(2)
     with col1:
-        option = st.multiselect('Selecciona el año', years_list, placeholder="Selecciona un año")
+        option = st.multiselect('Selecciona el año', years_list)
 
     with col2:
         features = ['Sacos de 70kg', 'Sacos de 60kg', 'Total en Kilogramos', 'Valor en USD']
