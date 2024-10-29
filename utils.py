@@ -168,7 +168,7 @@ def preprocess_s6(df: pd.DataFrame) -> pd.DataFrame:
     return df_melted, df_filtered
 
 @st.cache_data
-def years_list(df: pd.DataFrame) -> list:
+def yearsList(df: pd.DataFrame) -> list:
     years = df['año'].unique()
     years.sort()
     return years
@@ -191,7 +191,7 @@ def create_treemap(df: pd.DataFrame, feature: str):
         values=feature, 
         color='Nombre exportador', 
         color_discrete_sequence=px.colors.qualitative.Bold,
-        width=1750,
+        width=1570,
         height=600
     )
 
@@ -266,8 +266,7 @@ def choropleth_map(df: pd.DataFrame, feature:str):
                         color_continuous_scale=px.colors.sequential.YlOrRd,  
                         range_color=[df[feature].min(), df[feature].max()],  
                         title=f"Exportaciones de Café por País {feature}",
-                        width=800,
-                        height=600)
+                        height=700)
     
     
     return fig
@@ -315,7 +314,7 @@ def line(df: pd.DataFrame):
     fig = px.line(df, x='año', y='Valor', color='PAISES',
               title='Exportaciones de Café por País de 2000 a 2023',
               width=800,
-                   height=400,)
+                   height=600,)
     
     fig.update_xaxes(
         tickvals=df['año'].unique(),  # Usa solo los años disponibles
