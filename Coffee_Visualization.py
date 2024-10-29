@@ -23,6 +23,7 @@ def run():
     """
     st.markdown(html_title, unsafe_allow_html=True)
     st.markdown("""
+    ---
     Desarrollado bajo la dirección del **Ph.D. Oscar Mayorga**, Ingeniero Industrial, este tablero busca ofrecer una perspectiva integral sobre las exportaciones de café colombiano. 
     A través de una serie de visualizaciones interactivas y análisis detallados, los usuarios pueden examinar los datos de exportación desde múltiples dimensiones: **consolidado general**, 
     **país de destino**, **tipo de café**, y **puerto de embarque**. La plataforma emplea gráficos de línea, mapas de árbol, coropletas y heatmaps, facilitando la identificación de patrones 
